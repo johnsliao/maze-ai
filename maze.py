@@ -115,6 +115,78 @@ class AI:
     def __init__(self, maze):
         self.maze = maze
 
+    def is_path_better(self, path, visited, x, y, direction):
+        look_ahead = 3
+        path_t = list(path)
+        if direction == 'north':
+            path_t.append((x, y - 1))
+        if direction == 'south':
+            path_t.append((x, y + 1))
+        if direction == 'east':
+            path_t.append((x + 1, y))
+        if direction == 'west':
+            path_t.append((x - 1, y))
+
+        print 'Evaluating %s potential path' % direction
+
+        path_weight_t = 0
+
+        for l in range(look_ahead):  # Find minimum path from adjacent cell
+            go_t = None
+            good_adj_cells_t = []
+            min_weight_t = sys.maxsize
+            x_t, y_t = path_t[len(path_t) - 1][0], path_t[len(path_t) - 1][1]
+            print 'Evaluating (%s, %s)' % (x_t, y_t)
+            path_weight_t += self.maze.cells[x_t][y_t].weight
+
+            if self.maze.exists(x_t, y_t - 1) and not self.maze.cells[x_t][y_t].north:
+                good_adj_cells_t.append('north')
+            if self.maze.exists(x_t, y_t + 1) and not self.maze.cells[x_t][y_t].south:
+                good_adj_cells_t.append('south')
+            if self.maze.exists(x_t + 1, y_t) and not self.maze.cells[x_t][y_t].east:
+                good_adj_cells_t.append('east')
+            if self.maze.exists(x_t - 1, y_t) and not self.maze.cells[x_t][y_t].west:
+                good_adj_cells_t.append('west')
+
+            # Find minimum next step
+            if good_adj_cells_t:
+                for good_adj_cell_t in good_adj_cells_t:
+                    if good_adj_cell_t == 'north' and (x_t, y_t - 1) not in path_t and (
+                            x_t, y_t - 1) not in visited:
+                        if self.maze.cells[x_t][y_t - 1].weight < min_weight_t:
+                            go_t = 'north'
+                            min_weight_t = self.maze.cells[x_t][y_t - 1].weight
+                    if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t and (
+                            x_t, y_t + 1) not in visited:
+                        if self.maze.cells[x_t][y_t + 1] < min_weight_t:
+                            go_t = 'south'
+                            min_weight_t = self.maze.cells[x_t][y_t + 1].weight
+                    if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t and (
+                            x_t + 1, y_t) not in visited:
+                        if self.maze.cells[x_t + 1][y_t] < min_weight_t:
+                            go_t = 'east'
+                            min_weight_t = self.maze.cells[x_t + 1][y_t].weight
+                    if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t and (
+                            x_t - 1, y_t) not in visited:
+                        if self.maze.cells[x_t - 1][y_t] < min_weight_t:
+                            go_t = 'west'
+                            min_weight_t = self.maze.cells[x_t - 1][y_t].weight
+
+                if go_t == 'north':
+                    path_t.append((x_t, y_t - 1))
+                elif go_t == 'south':
+                    path_t.append((x_t, y_t + 1))
+                elif go_t == 'east':
+                    path_t.append((x_t + 1, y_t))
+                elif go_t == 'west':
+                    path_t.append((x_t - 1, y_t))
+                else:
+                    pass
+
+        print 'Total weight for %s is %s' % (direction, path_weight_t)
+
+        return path_weight_t
+
     def greedy(self):
         x, y = self.maze.start[0], maze.start[1]
         path = [(x, y)]
@@ -126,9 +198,9 @@ class AI:
 
         while (x, y) != self.maze.end:
             print '-----'
-            print 'Currently at (%s, %s)' % (x,y)
             go = None
             x, y = path[len(path) - 1][0], path[len(path) - 1][1]
+            print 'Currently at (%s, %s)' % (x, y)
             visited.append((x, y))
             traversed_cells_count += 1
             traversed_cells_total_weight += self.maze.cells[x][y].weight
@@ -137,257 +209,20 @@ class AI:
             path_weight_min_t = sys.maxsize  # Minimum path weight of all available choice paths
 
             if self.maze.exists(x, y - 1) and not self.maze.cells[x][y].north:
-                path_t = path
-                path_t.append((x, y - 1))  # Move temp mouse to adjacent cell
-                path_weight_t = 0
-                for l in range(look_ahead):  # Find minimum path from adjacent cell
-                    go_t = None
-                    good_adj_cells_t = []
-                    min_weight_t = sys.maxsize
-                    x_t, y_t = path_t[len(path_t) - 1][0], path_t[len(path_t) - 1][1]
-                    print 'Evaluating (%s, %s)' % (x_t, y_t)
-                    path_weight_t += self.maze.cells[x_t][y_t].weight
-
-                    if self.maze.exists(x_t, y_t - 1) and not self.maze.cells[x_t][y_t].north:
-                        good_adj_cells_t.append('north')
-                    if self.maze.exists(x_t, y_t + 1) and not self.maze.cells[x_t][y_t].south:
-                        good_adj_cells_t.append('south')
-                    if self.maze.exists(x_t + 1, y_t) and not self.maze.cells[x_t][y_t].east:
-                        good_adj_cells_t.append('east')
-                    if self.maze.exists(x_t - 1, y_t) and not self.maze.cells[x_t][y_t].west:
-                        good_adj_cells_t.append('west')
-
-                    print good_adj_cells_t
-
-                    # Find minimum next step
-                    if good_adj_cells_t:
-                        for good_adj_cell_t in good_adj_cells_t:
-                            if good_adj_cell_t == 'north' and (x_t, y_t - 1) not in path_t and (
-                                    x_t, y_t - 1) not in visited:
-                                if self.maze.cells[x_t][y_t - 1].weight < min_weight_t:
-                                    go_t = 'north'
-                                    min_weight_t = self.maze.cells[x_t][y_t - 1].weight
-                            if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t and (
-                                    x_t, y_t + 1) not in visited:
-                                if self.maze.cells[x_t][y_t + 1] < min_weight_t:
-                                    go_t = 'south'
-                                    min_weight_t = self.maze.cells[x_t][y_t + 1].weight
-                            if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t and (
-                                    x_t + 1, y_t) not in visited:
-                                if self.maze.cells[x_t + 1][y_t] < min_weight_t:
-                                    go_t = 'east'
-                                    min_weight_t = self.maze.cells[x_t + 1][y_t].weight
-                            if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t and (
-                                    x_t - 1, y_t) not in visited:
-                                if self.maze.cells[x_t - 1][y_t] < min_weight_t:
-                                    go_t = 'west'
-                                    min_weight_t = self.maze.cells[x_t - 1][y_t].weight
-
-                            if go_t == 'north':
-                                path_t.append((x_t, y_t - 1))
-                            elif go_t == 'south':
-                                path_t.append((x_t, y_t + 1))
-                            elif go_t == 'east':
-                                path_t.append((x_t + 1, y_t))
-                            elif go_t == 'west':
-                                path_t.append((x_t - 1, y_t))
-                            else:
-                                # Dead end - Do not take this path
-                                path_weight_t = sys.maxsize
-                                break
-
-                if path_weight_t < path_weight_min_t:
-                    path_weight_min_t = path_weight_t
+                if self.is_path_better(path, visited, x, y, 'north') < path_weight_min_t:
+                    path_weight_min_t = self.is_path_better(path, visited, x, y, 'north')
                     go = 'north'
             if self.maze.exists(x, y + 1) and not self.maze.cells[x][y].south:
-                path_t = path
-                path_t.append((x, y + 1))  # Move temp mouse to adjacent cell
-                path_weight_t = 0
-                for l in range(look_ahead):  # Find minimum path from adjacent cell
-                    go_t = None
-                    good_adj_cells_t = []
-                    min_weight_t = sys.maxsize
-                    x_t, y_t = path_t[len(path_t) - 1][0], path_t[len(path_t) - 1][1]
-                    print 'Evaluating (%s, %s)' % (x_t, y_t)
-                    path_weight_t += self.maze.cells[x_t][y_t].weight
-
-                    if self.maze.exists(x_t, y_t - 1) and not self.maze.cells[x_t][y_t].north:
-                        good_adj_cells_t.append('north')
-                    if self.maze.exists(x_t, y_t + 1) and not self.maze.cells[x_t][y_t].south:
-                        good_adj_cells_t.append('south')
-                    if self.maze.exists(x_t + 1, y_t) and not self.maze.cells[x_t][y_t].east:
-                        good_adj_cells_t.append('east')
-                    if self.maze.exists(x_t - 1, y_t) and not self.maze.cells[x_t][y_t].west:
-                        good_adj_cells_t.append('west')
-
-                    print good_adj_cells_t
-
-                    # Find minimum next step
-                    if good_adj_cells_t:
-                        for good_adj_cell_t in good_adj_cells_t:
-                            if good_adj_cell_t == 'north' and (x_t, y_t - 1) not in path_t and (
-                                    x_t, y_t - 1) not in visited:
-                                if self.maze.cells[x_t][y_t - 1].weight < min_weight_t:
-                                    go_t = 'north'
-                                    min_weight_t = self.maze.cells[x_t][y_t - 1].weight
-                            if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t and (
-                                    x_t, y_t + 1) not in visited:
-                                if self.maze.cells[x_t][y_t + 1] < min_weight_t:
-                                    go_t = 'south'
-                                    min_weight_t = self.maze.cells[x_t][y_t + 1].weight
-                            if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t and (
-                                    x_t + 1, y_t) not in visited:
-                                if self.maze.cells[x_t + 1][y_t] < min_weight_t:
-                                    go_t = 'east'
-                                    min_weight_t = self.maze.cells[x_t + 1][y_t].weight
-                            if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t and (
-                                    x_t - 1, y_t) not in visited:
-                                if self.maze.cells[x_t - 1][y_t] < min_weight_t:
-                                    go_t = 'west'
-                                    min_weight_t = self.maze.cells[x_t - 1][y_t].weight
-
-                            if go_t == 'north':
-                                path_t.append((x_t, y_t - 1))
-                            elif go_t == 'south':
-                                path_t.append((x_t, y_t + 1))
-                            elif go_t == 'east':
-                                path_t.append((x_t + 1, y_t))
-                            elif go_t == 'west':
-                                path_t.append((x_t - 1, y_t))
-                            else:
-                                # Dead end - Do not take this path
-                                path_weight_t = sys.maxsize
-                                break
-
-                if path_weight_t < path_weight_min_t:
-                    path_weight_min_t = path_weight_t
+                if self.is_path_better(path, visited, x, y, 'south') < path_weight_min_t:
+                    path_weight_min_t = self.is_path_better(path, visited, x, y, 'south')
                     go = 'south'
             if self.maze.exists(x + 1, y) and not self.maze.cells[x][y].east:
-                path_t = path
-                path_t.append((x + 1, y))  # Move temp mouse to adjacent cell
-                path_weight_t = 0
-                for l in range(look_ahead):  # Find minimum path from adjacent cell
-                    go_t = None
-                    good_adj_cells_t = []
-                    min_weight_t = sys.maxsize
-                    x_t, y_t = path_t[len(path_t) - 1][0], path_t[len(path_t) - 1][1]
-                    print 'Evaluating (%s, %s)' % (x_t, y_t)
-                    path_weight_t += self.maze.cells[x_t][y_t].weight
-
-                    if self.maze.exists(x_t, y_t - 1) and not self.maze.cells[x_t][y_t].north:
-                        good_adj_cells_t.append('north')
-                    if self.maze.exists(x_t, y_t + 1) and not self.maze.cells[x_t][y_t].south:
-                        good_adj_cells_t.append('south')
-                    if self.maze.exists(x_t + 1, y_t) and not self.maze.cells[x_t][y_t].east:
-                        good_adj_cells_t.append('east')
-                    if self.maze.exists(x_t - 1, y_t) and not self.maze.cells[x_t][y_t].west:
-                        good_adj_cells_t.append('west')
-
-                    print good_adj_cells_t
-
-                    # Find minimum next step
-                    if good_adj_cells_t:
-                        for good_adj_cell_t in good_adj_cells_t:
-                            if good_adj_cell_t == 'north' and (x_t, y_t - 1) not in path_t and (
-                                    x_t, y_t - 1) not in visited:
-                                if self.maze.cells[x_t][y_t - 1].weight < min_weight_t:
-                                    go_t = 'north'
-                                    min_weight_t = self.maze.cells[x_t][y_t - 1].weight
-                            if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t and (
-                                    x_t, y_t + 1) not in visited:
-                                if self.maze.cells[x_t][y_t + 1] < min_weight_t:
-                                    go_t = 'south'
-                                    min_weight_t = self.maze.cells[x_t][y_t + 1].weight
-                            if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t and (
-                                    x_t + 1, y_t) not in visited:
-                                if self.maze.cells[x_t + 1][y_t] < min_weight_t:
-                                    go_t = 'east'
-                                    min_weight_t = self.maze.cells[x_t + 1][y_t].weight
-                            if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t and (
-                                    x_t - 1, y_t) not in visited:
-                                if self.maze.cells[x_t - 1][y_t] < min_weight_t:
-                                    go_t = 'west'
-                                    min_weight_t = self.maze.cells[x_t - 1][y_t].weight
-
-                            if go_t == 'north':
-                                path_t.append((x_t, y_t - 1))
-                            elif go_t == 'south':
-                                path_t.append((x_t, y_t + 1))
-                            elif go_t == 'east':
-                                path_t.append((x_t + 1, y_t))
-                            elif go_t == 'west':
-                                path_t.append((x_t - 1, y_t))
-                            else:
-                                # Dead end - Do not take this path
-                                path_weight_t = sys.maxsize
-                                break
-
-                print 'Total temp path weight is %s' % path_weight_t
-                if path_weight_t < path_weight_min_t:
-                    path_weight_min_t = path_weight_t
+                if self.is_path_better(path, visited, x, y, 'east') < path_weight_min_t:
+                    path_weight_min_t = self.is_path_better(path, visited, x, y, 'east')
                     go = 'east'
             if self.maze.exists(x - 1, y) and not self.maze.cells[x][y].west:
-                path_t = path
-                path_t.append((x - 1, y))  # Move temp mouse to adjacent cell
-                path_weight_t = 0
-                for l in range(look_ahead):  # Find minimum path from adjacent cell
-                    go_t = None
-                    good_adj_cells_t = []
-                    min_weight_t = sys.maxsize
-                    x_t, y_t = path_t[len(path_t) - 1][0], path_t[len(path_t) - 1][1]
-                    print 'Evaluating (%s, %s)' % (x_t, y_t)
-                    path_weight_t += self.maze.cells[x_t][y_t].weight
-
-                    if self.maze.exists(x_t, y_t - 1) and not self.maze.cells[x_t][y_t].north:
-                        good_adj_cells_t.append('north')
-                    if self.maze.exists(x_t, y_t + 1) and not self.maze.cells[x_t][y_t].south:
-                        good_adj_cells_t.append('south')
-                    if self.maze.exists(x_t + 1, y_t) and not self.maze.cells[x_t][y_t].east:
-                        good_adj_cells_t.append('east')
-                    if self.maze.exists(x_t - 1, y_t) and not self.maze.cells[x_t][y_t].west:
-                        good_adj_cells_t.append('west')
-
-                    print good_adj_cells_t
-
-                    # Find minimum next step
-                    if good_adj_cells_t:
-                        for good_adj_cell_t in good_adj_cells_t:
-                            if good_adj_cell_t == 'north' and (x_t, y_t - 1) not in path_t and (
-                            x_t, y_t - 1) not in visited:
-                                if self.maze.cells[x_t][y_t - 1].weight < min_weight_t:
-                                    go_t = 'north'
-                                    min_weight_t = self.maze.cells[x_t][y_t - 1].weight
-                            if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t and (
-                            x_t, y_t + 1) not in visited:
-                                if self.maze.cells[x_t][y_t + 1] < min_weight_t:
-                                    go_t = 'south'
-                                    min_weight_t = self.maze.cells[x_t][y_t + 1].weight
-                            if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t and (
-                            x_t + 1, y_t) not in visited:
-                                if self.maze.cells[x_t + 1][y_t] < min_weight_t:
-                                    go_t = 'east'
-                                    min_weight_t = self.maze.cells[x_t + 1][y_t].weight
-                            if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t and (
-                            x_t - 1, y_t) not in visited:
-                                if self.maze.cells[x_t - 1][y_t] < min_weight_t:
-                                    go_t = 'west'
-                                    min_weight_t = self.maze.cells[x_t - 1][y_t].weight
-
-                            if go_t == 'north':
-                                path_t.append((x_t, y_t - 1))
-                            elif go_t == 'south':
-                                path_t.append((x_t, y_t + 1))
-                            elif go_t == 'east':
-                                path_t.append((x_t + 1, y_t))
-                            elif go_t == 'west':
-                                path_t.append((x_t - 1, y_t))
-                            else:
-                                # Dead end - Do not take this path
-                                path_weight_t = sys.maxsize
-                                break
-                print 'Total temp path weight is %s' % path_weight_t
-                if path_weight_t < path_weight_min_t:
-                    path_weight_min_t = path_weight_t
+                if self.is_path_better(path, visited, x, y, 'west') < path_weight_min_t:
+                    path_weight_min_t = self.is_path_better(path, visited, x, y, 'west')
                     go = 'west'
 
             print 'Going to %s' % go
