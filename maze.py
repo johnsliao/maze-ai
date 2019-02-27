@@ -74,7 +74,7 @@ class Maze:
         return True
 
     def render(self, greedy, a_star):
-        canvas_width, canvas_height = int(self.cell_width * self.height * 1.1), int(self.cell_width * self.height * 1.1)
+        canvas_width, canvas_height = int(self.cell_width * self.width + 5), int(self.cell_width * self.height + 30)
         im = Image.new('RGB', (canvas_width, canvas_height))
         draw = ImageDraw.Draw(im)
 
