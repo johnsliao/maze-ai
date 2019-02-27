@@ -118,6 +118,8 @@ class Maze:
         names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy), len(a_star)))]
         pos = 0
         for f, n in enumerate(names):
+            print 'Processing frame %s of %s' % (f, len(names))
+            
             frame = im.copy()
             draw = ImageDraw.Draw(frame)
             draw.text((0, self.cell_width * self.height + 10), 'STEP %s' % f, fill=(255, 255, 255, 255))
@@ -361,7 +363,7 @@ class AI:
 
 
 if __name__ == '__main__':
-    maze = Maze(width=8, height=8, cell_width=50)
+    maze = Maze(width=15, height=15, cell_width=50)
     maze.generate()
 
     ai = AI(maze)
