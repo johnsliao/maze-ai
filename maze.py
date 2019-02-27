@@ -21,8 +21,8 @@ class Maze:
         self.width = width
         self.height = height
         self.cell_width = cell_width
-        self.start = (width / 2, 0)
-        self.end = (width / 2, height - 1)
+        self.start = (int(width / 2), 0)
+        self.end = (int(width / 2), height - 1)
         self.cells = [[Cell() for _ in range(height)] for _ in range(width)]
 
     def generate(self):
@@ -112,13 +112,14 @@ class Maze:
 
         # Render AI paths
         fpath = 'images'
-        shutil.rmtree(fpath)
+        if os.path.exists(fpath):
+            shutil.rmtree(fpath)
         os.mkdir(fpath)
         images = []
         names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy), len(a_star)))]
         pos = 0
         for f, n in enumerate(names):
-            print 'Processing frame %s of %s' % (f, len(names))
+            print('Processing frame %s of %s' % (f, len(names)))
             
             frame = im.copy()
             draw = ImageDraw.Draw(frame)
@@ -200,15 +201,15 @@ class AI:
                             go_t = 'north'
                             min_weight_t = self.maze.cells[x_t][y_t - 1].weight
                     if good_adj_cell_t == 'south' and (x_t, y_t + 1) not in path_t:
-                        if self.maze.cells[x_t][y_t + 1] < min_weight_t:
+                        if self.maze.cells[x_t][y_t + 1].weight < min_weight_t:
                             go_t = 'south'
                             min_weight_t = self.maze.cells[x_t][y_t + 1].weight
                     if good_adj_cell_t == 'east' and (x_t + 1, y_t) not in path_t:
-                        if self.maze.cells[x_t + 1][y_t] < min_weight_t:
+                        if self.maze.cells[x_t + 1][y_t].weight < min_weight_t:
                             go_t = 'east'
                             min_weight_t = self.maze.cells[x_t + 1][y_t].weight
                     if good_adj_cell_t == 'west' and (x_t - 1, y_t) not in path_t:
-                        if self.maze.cells[x_t - 1][y_t] < min_weight_t:
+                        if self.maze.cells[x_t - 1][y_t].weight < min_weight_t:
                             go_t = 'west'
                             min_weight_t = self.maze.cells[x_t - 1][y_t].weight
 
@@ -273,9 +274,9 @@ class AI:
             else:
                 path.pop()
 
-        print 'Greedy'
-        print 'Cells traversed: %s' % traversed_cells_count
-        print 'Cells traversed total weight: %s' % traversed_cells_total_weight
+        print('Greedy')
+        print('Cells traversed: %s' % traversed_cells_count)
+        print('Cells traversed total weight: %s' % traversed_cells_total_weight)
 
         return visited
 
@@ -340,9 +341,9 @@ class AI:
             else:
                 path.pop()
 
-        print 'A*'
-        print 'Cells traversed: %s' % traversed_cells_count
-        print 'Cells traversed total weight: %s' % traversed_cells_total_weight
+        print('A*')
+        print('Cells traversed: %s' % traversed_cells_count)
+        print('Cells traversed total weight: %s' % traversed_cells_total_weight)
 
         return visited
 
