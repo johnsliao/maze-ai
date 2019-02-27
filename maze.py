@@ -1,5 +1,7 @@
 import random
 import sys
+import os
+import shutil
 
 from PIL import Image, ImageDraw
 
@@ -71,8 +73,8 @@ class Maze:
             return False
         return True
 
-    def render(self):
-        canvas_width, canvas_height = self.cell_width * self.width, self.cell_width * self.height
+    def render(self, greedy, a_star):
+        canvas_width, canvas_height = int(self.cell_width * self.height * 1.1), int(self.cell_width * self.height * 1.1)
         im = Image.new('RGB', (canvas_width, canvas_height))
         draw = ImageDraw.Draw(im)
 
@@ -107,7 +109,50 @@ class Maze:
             (self.end[0] * self.cell_width + self.cell_width / 10, self.end[1] * self.cell_width + self.cell_width / 2),
             'END',
             fill=(255, 255, 255, 255))
-        im.show()
+
+        # Render AI paths
+        fpath = 'images'
+        shutil.rmtree(fpath)
+        os.mkdir(fpath)
+        images = []
+        names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy), len(a_star)))]
+        pos = 0
+        for f, n in enumerate(names):
+            frame = im.copy()
+            draw = ImageDraw.Draw(frame)
+            draw.text((0, self.cell_width * self.height + 10), 'STEP %s' % f, fill=(255, 255, 255, 255))
+
+            # Render greedy path
+            try:
+                x = greedy[f][0] * self.cell_width + self.cell_width / 4
+                y = greedy[f][1] * self.cell_width + self.cell_width / 4
+                w = self.cell_width / 2
+                draw.ellipse((x, y, w + x, w + y), 'red')
+            except IndexError:
+                pass
+
+            # Render a star path
+            try:
+                x = a_star[f][0] * self.cell_width + self.cell_width / 4
+                y = a_star[f][1] * self.cell_width + self.cell_width / 4
+                w = self.cell_width / 2
+                draw.ellipse((x, y, w + x, w + y), 'green')
+            except IndexError:
+                pass
+
+            frame.save(os.path.join(fpath, n))
+            pos += 25
+
+        for n in names:
+            frame = Image.open(os.path.join(fpath, n))
+            images.append(frame)
+
+        # Save the frames as an animated GIF
+        images[0].save(os.path.join(fpath, 'rendered.gif'),
+                       save_all=True,
+                       append_images=images[1:],
+                       duration=100,
+                       loop=0)
 
 
 class AI:
@@ -115,7 +160,7 @@ class AI:
     def __init__(self, maze):
         self.maze = maze
 
-    def is_path_better(self, path, visited, x, y, direction):
+    def is_path_better(self, path, x, y, direction):
         look_ahead = 3
         path_t = list(path)
         if direction == 'north':
@@ -196,22 +241,22 @@ class AI:
             path_weight_min_t = sys.maxsize  # Minimum path weight of all available choice paths
 
             if self.maze.exists(x, y - 1) and not self.maze.cells[x][y].north and (x, y - 1) not in visited:
-                calculated_temp_path = self.is_path_better(path, visited, x, y, 'north')
+                calculated_temp_path = self.is_path_better(path, x, y, 'north')
                 if calculated_temp_path < path_weight_min_t:
                     path_weight_min_t = calculated_temp_path
                     go = 'north'
             if self.maze.exists(x, y + 1) and not self.maze.cells[x][y].south and (x, y + 1) not in visited:
-                calculated_temp_path = self.is_path_better(path, visited, x, y, 'south')
+                calculated_temp_path = self.is_path_better(path, x, y, 'south')
                 if calculated_temp_path < path_weight_min_t:
                     path_weight_min_t = calculated_temp_path
                     go = 'south'
             if self.maze.exists(x + 1, y) and not self.maze.cells[x][y].east and (x + 1, y) not in visited:
-                calculated_temp_path = self.is_path_better(path, visited, x, y, 'east')
+                calculated_temp_path = self.is_path_better(path, x, y, 'east')
                 if calculated_temp_path < path_weight_min_t:
                     path_weight_min_t = calculated_temp_path
                     go = 'east'
             if self.maze.exists(x - 1, y) and not self.maze.cells[x][y].west and (x - 1, y) not in visited:
-                calculated_temp_path = self.is_path_better(path, visited, x, y, 'west')
+                calculated_temp_path = self.is_path_better(path, x, y, 'west')
                 if calculated_temp_path < path_weight_min_t:
                     go = 'west'
 
@@ -229,6 +274,8 @@ class AI:
         print 'Greedy'
         print 'Cells traversed: %s' % traversed_cells_count
         print 'Cells traversed total weight: %s' % traversed_cells_total_weight
+
+        return visited
 
     def a_star(self):
         x, y = self.maze.start[0], maze.start[1]
@@ -295,6 +342,8 @@ class AI:
         print 'Cells traversed: %s' % traversed_cells_count
         print 'Cells traversed total weight: %s' % traversed_cells_total_weight
 
+        return visited
+
     def calculate_path_weight(self, x, y):
         delta_x = self.maze.end[0] - x
         delta_y = self.maze.end[1] - y
@@ -314,9 +363,9 @@ class AI:
 if __name__ == '__main__':
     maze = Maze(width=8, height=8, cell_width=50)
     maze.generate()
-    maze.render()
 
     ai = AI(maze)
-    ai.greedy()
-    print
-    ai.a_star()
+    greedy = ai.greedy()
+    a_star = ai.a_star()
+
+    maze.render(greedy, a_star)
