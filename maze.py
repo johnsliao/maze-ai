@@ -223,6 +223,9 @@ class AI:
                     path_t.append((x_t - 1, y_t))
                 else:
                     pass
+            else:
+                # Dead end
+                path_weight_t = sys.maxsize
 
         return path_weight_t
 
@@ -364,7 +367,7 @@ class AI:
 
 
 if __name__ == '__main__':
-    maze = Maze(width=15, height=15, cell_width=50)
+    maze = Maze(width=8, height=8, cell_width=50)
     maze.generate()
 
     ai = AI(maze)
