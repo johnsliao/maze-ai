@@ -25,6 +25,21 @@ class Maze:
         self.end = (int(width / 2), height - 1)
         self.cells = [[Cell() for _ in range(height)] for _ in range(width)]
 
+    def openify(self, cells_to_open):
+        """ Remove sections of the maze """
+
+        for r in range(cells_to_open):
+            x, y = random.choice(range(0, self.width)), random.choice(range(0, self.height))
+
+            if not any([self.cells[x][y].north, self.cells[x][y].south, self.cells[x][y].east, self.cells[x][y].west]):
+                print('Removing walls for (%s, %s)' % (x, y))
+                self.cells[x][y].north = False
+                self.cells[x][y].south = False
+                self.cells[x][y].east = False
+                self.cells[x][y].west = False
+            else:
+                print('Already opened %s %s' % (x, y))
+
     def generate(self):
         x, y = random.choice(range(self.width)), random.choice(range(self.height))
         self.cells[x][y].visited = True
@@ -99,9 +114,9 @@ class Maze:
                           fill=(255, 255, 255, 255))
 
                 # Draw (x,y) at lower left corner
-                draw.text((x * self.cell_width + 5, y * self.cell_width + self.cell_width - 15),
-                          str('(%s, %s)' % (x, y)),
-                          fill=(255, 255, 255, 255))
+                # draw.text((x * self.cell_width + 5, y * self.cell_width + self.cell_width - 15),
+                #           str('(%s, %s)' % (x, y)),
+                #           fill=(255, 255, 255, 255))
 
         draw.text((self.start[0] * self.cell_width + self.cell_width / 10,
                    self.start[1] * self.cell_width + self.cell_width / 2), 'START', fill=(255, 255, 255, 255))
@@ -120,7 +135,7 @@ class Maze:
         pos = 0
         for f, n in enumerate(names):
             print('Processing frame %s of %s' % (f, len(names)))
-            
+
             frame = im.copy()
             draw = ImageDraw.Draw(frame)
             draw.text((0, self.cell_width * self.height + 10), 'STEP %s' % f, fill=(255, 255, 255, 255))
@@ -368,7 +383,10 @@ class AI:
 
 if __name__ == '__main__':
     maze = Maze(width=8, height=8, cell_width=50)
+
+    cells_to_open = 10
     maze.generate()
+    maze.openify(1)
 
     ai = AI(maze)
     greedy = ai.greedy()
