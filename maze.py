@@ -134,10 +134,12 @@ class Maze:
 
         # Render Results
         t = 'Greedy: Cells Traversed: %s | Total Weight Traversed: %s' % (greedy['total_cells'], greedy['total_weight'])
-        draw.text((0, self.cell_width * self.height + 25), t, fill=(255, 255, 255, 255))
+        draw.text((15, self.cell_width * self.height + 25), t, fill=(255, 255, 255, 255))
+        draw.ellipse((0, self.cell_width * self.height + 25, 10, self.cell_width * self.height + 35), 'red')
 
-        t = 'A*: Cells Traversed: %s | Total Weight Traversed: %s' % (a_star['total_cells'], a_star['total_weight'])
-        draw.text((0, self.cell_width * self.height + 40), t, fill=(255, 255, 255, 255))
+        t = 'A*:     Cells Traversed: %s | Total Weight Traversed: %s' % (a_star['total_cells'], a_star['total_weight'])
+        draw.text((15, self.cell_width * self.height + 40), t, fill=(255, 255, 255, 255))
+        draw.ellipse((0, self.cell_width * self.height + 40, 10, self.cell_width * self.height + 50), 'green')
 
         # Render AI paths
         fpath = 'images'
