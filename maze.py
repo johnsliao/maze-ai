@@ -25,20 +25,31 @@ class Maze:
         self.end = (int(width / 2), height - 1)
         self.cells = [[Cell() for _ in range(height)] for _ in range(width)]
 
-    def openify(self, cells_to_open):
+    def make_holes(self, cells_to_open):
         """ Remove sections of the maze """
+        assert cells_to_open <= self.width * self.height, 'Cannot make more holes than total cells'
 
         for r in range(cells_to_open):
-            x, y = random.choice(range(0, self.width)), random.choice(range(0, self.height))
+            while True:
+                x, y = random.choice(range(0, self.width)), random.choice(range(0, self.height))
+                if any([self.cells[x][y].north, self.cells[x][y].south, self.cells[x][y].east, self.cells[x][y].west]):
+                    print('Adding hole @ (%s, %s)' % (x, y))
+                    self.cells[x][y].north = False
+                    self.cells[x][y].south = False
+                    self.cells[x][y].east = False
+                    self.cells[x][y].west = False
 
-            if not any([self.cells[x][y].north, self.cells[x][y].south, self.cells[x][y].east, self.cells[x][y].west]):
-                print('Removing walls for (%s, %s)' % (x, y))
-                self.cells[x][y].north = False
-                self.cells[x][y].south = False
-                self.cells[x][y].east = False
-                self.cells[x][y].west = False
-            else:
-                print('Already opened %s %s' % (x, y))
+                    # Remove adjacent cell walls if they exist
+                    if self.exists(x, y - 1):
+                        self.cells[x][y - 1].north = False
+                    if self.exists(x, y + 1):
+                        self.cells[x][y + 1].south = False
+                    if self.exists(x + 1, y):
+                        self.cells[x + 1][y].west = False
+                    if self.exists(x - 1, y):
+                        self.cells[x - 1][y].east = False
+
+                    break
 
     def generate(self):
         x, y = random.choice(range(self.width)), random.choice(range(self.height))
@@ -112,11 +123,6 @@ class Maze:
                 # Render cell weight in top left corner
                 draw.text((x * self.cell_width + 5, y * self.cell_width + 5), str(self.cells[x][y].weight),
                           fill=(255, 255, 255, 255))
-
-                # Draw (x,y) at lower left corner
-                # draw.text((x * self.cell_width + 5, y * self.cell_width + self.cell_width - 15),
-                #           str('(%s, %s)' % (x, y)),
-                #           fill=(255, 255, 255, 255))
 
         draw.text((self.start[0] * self.cell_width + self.cell_width / 10,
                    self.start[1] * self.cell_width + self.cell_width / 2), 'START', fill=(255, 255, 255, 255))
@@ -386,7 +392,7 @@ if __name__ == '__main__':
 
     cells_to_open = 10
     maze.generate()
-    maze.openify(1)
+    maze.make_holes(12)
 
     ai = AI(maze)
     greedy = ai.greedy()
