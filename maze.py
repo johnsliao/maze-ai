@@ -34,20 +34,19 @@ class Maze:
                 x, y = random.choice(range(0, self.width)), random.choice(range(0, self.height))
                 if any([self.cells[x][y].north, self.cells[x][y].south, self.cells[x][y].east, self.cells[x][y].west]):
                     print('Adding hole @ (%s, %s)' % (x, y))
-                    self.cells[x][y].north = False
-                    self.cells[x][y].south = False
-                    self.cells[x][y].east = False
-                    self.cells[x][y].west = False
-
                     # Remove adjacent cell walls if they exist
                     if self.exists(x, y - 1):
-                        self.cells[x][y - 1].north = False
+                        self.cells[x][y].north = False
+                        self.cells[x][y - 1].south = False
                     if self.exists(x, y + 1):
-                        self.cells[x][y + 1].south = False
+                        self.cells[x][y].south = False
+                        self.cells[x][y + 1].north = False
                     if self.exists(x + 1, y):
                         self.cells[x + 1][y].west = False
+                        self.cells[x][y].east = False
                     if self.exists(x - 1, y):
                         self.cells[x - 1][y].east = False
+                        self.cells[x][y].west = False
 
                     break
 
@@ -100,7 +99,7 @@ class Maze:
         return True
 
     def render(self, greedy, a_star):
-        canvas_width, canvas_height = int(self.cell_width * self.width + 5), int(self.cell_width * self.height + 30)
+        canvas_width, canvas_height = int(self.cell_width * self.width + 5), int(self.cell_width * self.height + 100)
         im = Image.new('RGB', (canvas_width, canvas_height))
         draw = ImageDraw.Draw(im)
 
@@ -124,12 +123,21 @@ class Maze:
                 draw.text((x * self.cell_width + 5, y * self.cell_width + 5), str(self.cells[x][y].weight),
                           fill=(255, 255, 255, 255))
 
-        draw.text((self.start[0] * self.cell_width + self.cell_width / 10,
-                   self.start[1] * self.cell_width + self.cell_width / 2), 'START', fill=(255, 255, 255, 255))
-        draw.text(
-            (self.end[0] * self.cell_width + self.cell_width / 10, self.end[1] * self.cell_width + self.cell_width / 2),
-            'END',
-            fill=(255, 255, 255, 255))
+        # Render Start/Finish
+        x_start = self.start[0] * self.cell_width + self.cell_width / 10
+        y_start = self.start[1] * self.cell_width + self.cell_width / 2
+        x_fin = self.end[0] * self.cell_width + self.cell_width / 10
+        y_fin = self.end[1] * self.cell_width + self.cell_width / 2
+
+        draw.text((x_start, y_start), 'START', fill=(255, 255, 255, 255))
+        draw.text((x_fin, y_fin), 'END', fill=(255, 255, 255, 255))
+
+        # Render Results
+        t = 'Greedy: Cells Traversed: %s | Total Weight Traversed: %s' % (greedy['total_cells'], greedy['total_weight'])
+        draw.text((0, self.cell_width * self.height + 25), t, fill=(255, 255, 255, 255))
+
+        t = 'A*: Cells Traversed: %s | Total Weight Traversed: %s' % (a_star['total_cells'], a_star['total_weight'])
+        draw.text((0, self.cell_width * self.height + 40), t, fill=(255, 255, 255, 255))
 
         # Render AI paths
         fpath = 'images'
@@ -137,19 +145,19 @@ class Maze:
             shutil.rmtree(fpath)
         os.mkdir(fpath)
         images = []
-        names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy), len(a_star)))]
+        names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy['visited']), len(a_star['visited'])))]
         pos = 0
         for f, n in enumerate(names):
             print('Processing frame %s of %s' % (f, len(names)))
 
             frame = im.copy()
             draw = ImageDraw.Draw(frame)
-            draw.text((0, self.cell_width * self.height + 10), 'STEP %s' % f, fill=(255, 255, 255, 255))
+            draw.text((0, self.cell_width * self.height + 10), 'Step %s' % f, fill=(255, 255, 255, 255))
 
             # Render greedy path
             try:
-                x = greedy[f][0] * self.cell_width + self.cell_width / 4
-                y = greedy[f][1] * self.cell_width + self.cell_width / 4
+                x = greedy['visited'][f][0] * self.cell_width + self.cell_width / 4
+                y = greedy['visited'][f][1] * self.cell_width + self.cell_width / 4
                 w = self.cell_width / 2
                 draw.ellipse((x, y, w + x, w + y), 'red')
             except IndexError:
@@ -157,8 +165,8 @@ class Maze:
 
             # Render a star path
             try:
-                x = a_star[f][0] * self.cell_width + self.cell_width / 4
-                y = a_star[f][1] * self.cell_width + self.cell_width / 4
+                x = a_star['visited'][f][0] * self.cell_width + self.cell_width / 4
+                y = a_star['visited'][f][1] * self.cell_width + self.cell_width / 4
                 w = self.cell_width / 2
                 draw.ellipse((x, y, w + x, w + y), 'green')
             except IndexError:
@@ -254,15 +262,15 @@ class AI:
         x, y = self.maze.start[0], maze.start[1]
         path = [(x, y)]
         visited = []
-        traversed_cells_count = 0
-        traversed_cells_total_weight = 0
+        total_cells = 0
+        total_weight = 0
 
         while (x, y) != self.maze.end:
             go = None
             x, y = path[len(path) - 1][0], path[len(path) - 1][1]
             visited.append((x, y))
-            traversed_cells_count += 1
-            traversed_cells_total_weight += self.maze.cells[x][y].weight
+            total_cells += 1
+            total_weight += self.maze.cells[x][y].weight
 
             # Find valid adjacent cells
             path_weight_min_t = sys.maxsize  # Minimum path weight of all available choice paths
@@ -298,18 +306,14 @@ class AI:
             else:
                 path.pop()
 
-        print('Greedy')
-        print('Cells traversed: %s' % traversed_cells_count)
-        print('Cells traversed total weight: %s' % traversed_cells_total_weight)
-
-        return visited
+        return {'visited': visited, 'total_cells': total_cells, 'total_weight': total_weight}
 
     def a_star(self):
         x, y = self.maze.start[0], maze.start[1]
         path = [(x, y)]
         visited = []
-        traversed_cells_count = 0
-        traversed_cells_total_weight = 0
+        total_cells = 0
+        total_weight = 0
 
         while (x, y) != self.maze.end:
             good_adj_cells = []
@@ -318,8 +322,8 @@ class AI:
 
             x, y = path[len(path) - 1][0], path[len(path) - 1][1]
             visited.append((x, y))
-            traversed_cells_count += 1
-            traversed_cells_total_weight += self.maze.cells[x][y].weight
+            total_cells += 1
+            total_weight += self.maze.cells[x][y].weight
 
             if self.maze.exists(x, y - 1) and not self.maze.cells[x][y].north:
                 good_adj_cells.append('north')
@@ -365,11 +369,7 @@ class AI:
             else:
                 path.pop()
 
-        print('A*')
-        print('Cells traversed: %s' % traversed_cells_count)
-        print('Cells traversed total weight: %s' % traversed_cells_total_weight)
-
-        return visited
+        return {'visited': visited, 'total_cells': total_cells, 'total_weight': total_weight}
 
     def calculate_path_weight(self, x, y):
         delta_x = self.maze.end[0] - x
@@ -389,11 +389,9 @@ class AI:
 
 if __name__ == '__main__':
     maze = Maze(width=8, height=8, cell_width=50)
-
-    cells_to_open = 10
+    number_of_holes = 0
     maze.generate()
-    maze.make_holes(12)
-
+    maze.make_holes(number_of_holes)
     ai = AI(maze)
     greedy = ai.greedy()
     a_star = ai.a_star()
