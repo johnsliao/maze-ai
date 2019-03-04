@@ -148,8 +148,7 @@ class Maze:
         names = ['img{:02d}.gif'.format(i) for i in range(max(len(greedy['visited']), len(a_star['visited'])))]
         pos = 0
         for f, n in enumerate(names):
-            print('Processing frame %s of %s' % (f, len(names)))
-
+            print('Processing gif frame %s of %s' % (f, len(names)))
             frame = im.copy()
             draw = ImageDraw.Draw(frame)
             draw.text((0, self.cell_width * self.height + 10), 'Step %s' % f, fill=(255, 255, 255, 255))
